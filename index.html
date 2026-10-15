@@ -148,8 +148,8 @@
 
   <section>
     <h3>11. データの共有・取り扱いについて</h3>
-    <p>通常のブラウザ内に保存されたデータは、共有用コレクションを作成しない限り、自動的に共有されません。</p>
-    <p>共有用コレクションを作成すると、選択したコレクションのデータがCloudflareに保存されます。閲覧用URLを知っている人は、その内容を確認できます。</p>
+    <p><strong>通常のブラウザ内に保存されたデータは、共有用コレクションを作成しない限り、自動的に共有されません。</strong></p>
+    <p><strong>共有用コレクションを作成すると、選択したコレクションのデータがCloudflareに保存されます。</strong>閲覧用URLを知っている人は、その内容を確認できます。</p>
     <p>秘密の編集用URLが第三者に知られると、共有用コレクションを編集されるおそれがあります。取り扱いには十分注意してください。</p>
     <p>大切なデータを守るため、定期的にバックアップを取り、共有する情報やURLの管理に気をつけてご利用ください。</p></section></div><div class="notice">使い方で困ったことや、追加してほしい機能があれば、下のボタンからXで連絡してください。</div><div class="row" style="margin-top:14px"><button class="primary" id="feedbackBtn" style="width:100%">質問・要望などを送る（X）</button></div></div></div>
 <div class="modal hidden" id="themeModal"><div class="modal-box"><div class="modal-head"><h2>背景色を設定</h2><button class="ghost" data-close="themeModal">閉じる</button></div><p class="small">ヘッダーとページ背景を別々に設定できます。画像から色を選ぶ場合は画像を読み込み、画像上の好きな場所をタップ／クリックしてください。</p><div class="form-grid"><label>ヘッダーの背景色<input id="headerColor" type="color" value="#fff0f6"></label><label>ページの背景色<input id="pageColor" type="color" value="#fffafd"></label><label class="span2">色を採取する画像<input id="eyedropImage" type="file" accept="image/*"></label></div><div class="row" style="align-items:flex-start;gap:16px;margin-top:12px"><canvas id="eyedropCanvas" class="preview hidden" style="max-width:min(100%,520px);max-height:360px;object-fit:contain;cursor:crosshair;margin-top:0"></canvas><div id="sampledColorPanel" class="hidden"><div class="small">スポイトで選んだ色</div><div class="sampled-preview"><div class="sample-swatch" id="sampledSwatch"></div><span class="sample-hex" id="sampledHex">#fff0f6</span></div></div></div><div class="row" style="margin-top:12px"><button class="primary" id="sampleHeaderBtn">採取色をヘッダーに適用</button><button class="primary" id="samplePageBtn">採取色をページ背景に適用</button><button class="ghost" id="resetThemeBtn">初期色に戻す</button><button class="primary" id="saveThemeBtn">色を保存</button></div><div class="notice">画像は色を採取するためだけに読み込みます。画像自体はコレクションに保存・送信されません。</div></div></div>
