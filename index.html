@@ -22,7 +22,133 @@
 <div class="modal hidden" id="shareModal"><div class="modal-box"><div class="modal-head"><h2>閲覧用URL</h2><button class="ghost" data-close="shareModal">閉じる</button></div><p class="small">棚のデータと画像をCloudflareに保存して、閲覧用URLと秘密の編集用URLを作成します。</p><label>閲覧用URL（受け取った人は閲覧のみ）<textarea id="shareUrl" rows="3" style="width:100%;border:1px solid var(--line);border-radius:12px;padding:10px" readonly></textarea></label><div class="row" style="margin-top:8px"><button class="primary" id="copyShareBtn">閲覧URLをコピー</button><button class="ghost" id="openShareBtn">閲覧画面を確認</button></div><label style="margin-top:12px">秘密の編集用URL（このURLを知っている人は編集できます）<textarea id="editUrl" rows="3" style="width:100%;border:1px solid var(--line);border-radius:12px;padding:10px" readonly></textarea></label><div class="row" style="margin-top:8px"><button class="primary" id="copyEditUrlBtn">編集URLをコピー</button></div><div class="notice">重要：秘密の編集用URLには編集権限が含まれています。ほかの人には渡さず、自分だけが安全に保管してください。閲覧用URLを知っている人は棚の内容を見られます。</div></div></div>
 <div class="modal hidden" id="optionsModal"><div class="modal-box"><div class="modal-head"><h2 id="optionsTitle">コレクション設定</h2><button class="ghost" data-close="optionsModal">閉じる</button></div><p class="small">カテゴリー・タグは「グループ名」と、そのグループ内の選択肢を設定します。例：カテゴリー1 → A / B / C、カテゴリー2 → a / b / c。グッズ登録時は各グループから複数選択できます。</p><label style="margin-top:12px">コレクション名<input id="settingsCollectionName" maxlength="100" placeholder="アニメ名/推しの名前等"></label><section style="margin-top:14px"><div class="row" style="justify-content:space-between"><h3 style="margin:0">カテゴリー</h3><button type="button" class="ghost" id="addCategoryGroupBtn">＋ カテゴリーを追加</button></div><div id="categoryGroupsEditor"></div></section><section style="margin-top:16px"><div class="row" style="justify-content:space-between"><h3 style="margin:0">タグ</h3><button type="button" class="ghost" id="addTagGroupBtn">＋ タグを追加</button></div><div id="tagGroupsEditor"></div></section><div class="row" style="margin-top:12px"><button class="primary" id="saveOptionsBtn">設定を保存</button><button class="ghost" data-close="optionsModal">キャンセル</button></div><div class="notice">グループも選択肢も必要な数だけ追加・削除・名前変更できます。削除した選択肢がグッズに付いている場合は、その項目もグッズから外れます。</div></div></div>
 <div class="modal hidden" id="logoModal"><div class="modal-box"><div class="modal-head"><h2>コレクションのロゴ</h2><button class="ghost" data-close="logoModal">閉じる</button></div><p class="small">ロゴ画像はコレクションごとに保存されます。画像を選ぶと、正方形の枠に使いたい部分をドラッグして切り取れます。</p><div class="row" style="margin:12px 0"><button class="primary" id="insertLogoBtn">画像を挿入する</button><button class="ghost" id="resetLogoBtn">初期状態に戻す</button><input id="logoImageInput" type="file" accept="image/*" hidden></div><div id="cropTools" class="hidden"><div class="row" style="align-items:flex-start;gap:14px"><div class="crop-area" id="cropArea"><canvas id="cropCanvas"></canvas><div class="crop-selection" id="cropSelection"></div></div><div><div class="small">切り取りプレビュー</div><div class="logo-preview" id="logoCropPreview">♡</div><p class="small">画像上をドラッグして範囲を選択してください。正方形に切り取られます。</p><button class="primary" id="saveLogoCropBtn">この範囲をロゴにする</button></div></div></div><div class="notice">ロゴを設定しない場合は、初期状態の ♡ が表示されます。</div></div></div>
-<div class="modal hidden" id="helpModal"><div class="modal-box"><div class="modal-head"><h2>Oshi Shelfの使い方</h2><button class="ghost" data-close="helpModal">閉じる</button></div><div class="help-content"><section><h3>1. コレクションを整理する</h3><p>「＋ コレクション」で作品や推しごとにコレクションを追加できます。「コレクション設定」では名前・カテゴリー・タグを編集できます。グッズカードの「編集」「削除」、所持数の「−／＋」、ハート、および「欲しい」ボタンで情報を管理できます。</p></section><section><h3>2. グッズを登録する</h3><p>「グッズを登録」を開き、名称・カテゴリー・タグ・所持数・画像などを入力して「保存する」を押します。画像は必須、メモは空欄でも登録できます。カテゴリーやタグは、先に「コレクション設定」でグループと選択肢を作成してください。</p></section><section><h3>3. 左上の♡アイコンを設定する</h3><p>画面左上の♡をクリックすると、コレクションのロゴ画像を設定できます。「画像を挿入する」で画像を選び、画像上をドラッグして正方形に切り取り、「この範囲をロゴにする」を押してください。設定したロゴはコレクションごとに保存されます。「初期状態に戻す」を押すと♡に戻ります。ロゴ画像の設定は任意です。</p></section><section><h3>4. 背景色を設定する</h3><p>「背景色を設定」を開き、ヘッダーの色とページの色を設定できます。画像を読み込み、使いたい色の部分でクリックすると、その色を選択し、設定することができます。「色を保存」を押すと保存され、「初期色に戻す」を押せば、デフォルトの色に戻ります。背景色の設定は任意です。</p></section><section><h3>5. 探す・並べ替える</h3><p>検索欄やカテゴリー・タグの絞り込みを使ってグッズを探せます。「所持」「未所持」「欲しい」「お気に入り」で表示を切り替え、「並び替え」「表示密度」で見やすく調整できます。カードをドラッグして自分の好きな順に並べ替えることもできます。</p></section><section><h3>6. 画像・URLを作る</h3><p>「取引用画像を作成」では、表示中のグッズから一覧画像を作れます。「閲覧用URLを作成」では、グッズ情報を含む閲覧専用URLを作成できます。共有URLには名称・所持数・画像などが含まれるため、見られて困る情報は含めず、送る相手にも注意してください。</p></section><section><h3>7. バックアップする・読み込む</h3><p>「データを書き出す」でバックアップ用JSONファイルを保存できます。「データを読み込む」でそのファイルを復元できます。読み込みは現在のデータを置き換えるので、実行前に必要なバックアップを取ってください。</p></section><section><h3>7. 保存について</h3><p>登録したデータは、基本的に開いているブラウザ内に保存されます。同じ端末・同じブラウザで利用してください。ブラウザのデータ削除や端末変更に備えて、定期的にバックアップを書き出すのがおすすめです。サイトを開いただけで、あなたのコレクションが自動的に他の利用者へ共有されることはありません。</p></section></div><div class="notice">使い方で困ったことや、追加してほしい機能があれば、下のボタンからXで連絡してください。</div><div class="row" style="margin-top:14px"><button class="primary" id="feedbackBtn" style="width:100%">質問・要望などを送る（X）</button></div></div></div>
+<div class="modal hidden" id="helpModal"><div class="modal-box"><div class="modal-head"><h2>Oshi Shelfの使い方</h2><button class="ghost" data-close="helpModal">閉じる</button></div><div class="help-content"><h3>1. コレクションを整理する</h3>
+    <p>コレクションは、グッズを種類や作品ごとに分けて管理するためのものです。</p>
+    <ul>
+      <li><strong>コレクションを追加する：</strong> 新しいコレクションを作成します。</li>
+      <li><strong>コレクションを切り替える：</strong> 管理したいコレクションを選択します。</li>
+      <li><strong>コレクションを編集する：</strong> 名前の変更や削除などを行います。</li>
+    </ul>
+    <p>コレクションを分けることで、グッズを自分の好きな方法で整理できます。</p>
+  </section>
+
+  <section>
+    <h3>2. グッズを登録する</h3>
+    <p>登録画面から、管理したいグッズの情報を入力します。</p>
+    <ul>
+      <li>グッズの名前や画像を登録できます。</li>
+      <li>カテゴリやタグなどを設定して、グッズを分類できます。</li>
+      <li>所持状況などの情報を記録して、自分のグッズを管理できます。</li>
+    </ul>
+    <p>登録したグッズは、あとから編集・削除できます。入力できる項目を活用して、自分に合った管理方法を見つけてみてください。</p>
+  </section>
+
+  <section>
+    <h3>3. 左上の♡アイコンを設定する</h3>
+    <p>左上の♡アイコンから、アイコンに関する設定を行えます。</p>
+    <p>好きな画像などを設定して、自分らしいデザインにカスタマイズできます。</p>
+  </section>
+
+  <section>
+    <h3>4. 背景色を設定する</h3>
+    <p>背景色を変更して、サイトの見た目を自分好みにカスタマイズできます。</p>
+    <p>好きな色を選んで、使いやすいデザインに調整してみてください。</p>
+  </section>
+
+  <section>
+    <h3>5. グッズを探す・並べ替える</h3>
+    <p>登録したグッズは、検索や並べ替え機能を使って探せます。</p>
+    <ul>
+      <li><strong>検索：</strong> グッズ名などから目的のグッズを探します。</li>
+      <li><strong>絞り込み：</strong> カテゴリやタグなどを使って表示するグッズを絞り込みます。</li>
+      <li><strong>並べ替え：</strong> グッズの表示順を変更します。</li>
+    </ul>
+    <p>グッズが増えてきたときも、これらの機能を使えば目的のグッズを見つけやすくなります。</p>
+  </section>
+
+  <section>
+    <h3>6. 取引用画像を作成する</h3>
+    <p>グッズの管理画面から、用途に応じた画像を作成できます。</p>
+    <h4>取引用画像を作成する手順</h4>
+    <ol>
+      <li>共有したいコレクションを表示します。</li>
+      <li>検索やソートを使って、画像にしたい物のみを表示します。</li>
+      <li>「取引用画像を作成」を開きます。</li>
+      <li>画面の案内に従って、画像を作成します。</li>
+      <li>画像を保存します。</li>
+    </ol>
+    <p>Xなどでのお取引にご活用ください。</p>
+  </section>
+
+  <section>
+    <h3>7. データをバックアップする・読み込む</h3>
+    <p>「データを書き出す」から、グッズの管理データをJSONファイルとして保存できます。</p>
+
+    <h4>バックアップする場合</h4>
+    <ul>
+      <li>定期的にデータを書き出して、大切に保管してください。</li>
+      <li>端末の故障やブラウザのデータ消失に備えて、バックアップを取っておくと安心です。</li>
+    </ul>
+
+    <h4>データを読み込む場合</h4>
+    <ul>
+      <li>保存してあるJSONファイルを読み込むことで、データを復元できます。</li>
+      <li>読み込みによって現在のデータが置き換わる場合があります。画面の確認メッセージをよく読んでから操作してください。</li>
+    </ul>
+
+    <p><strong>注意：</strong> バックアップ用のJSONファイルには、グッズの情報などが含まれます。第三者に渡す場合は、内容を確認してください。</p>
+  </section>
+
+  <section>
+    <h3>8. データの保存について</h3>
+    <p>通常の利用では、グッズの管理データは使用しているブラウザ内に保存されます。</p>
+    <ul>
+      <li>同じブラウザで利用する場合は、保存されたデータを引き続き使用できます。</li>
+      <li>別の端末やブラウザでは、通常の保存データをそのまま共有できません。</li>
+      <li>ブラウザのデータを削除すると、保存したデータが失われる場合があります。定期的なバックアップをおすすめします。</li>
+    </ul>
+    <p>共有用コレクションを作成した場合は、そのデータがCloudflareにも保存され、発行されたURLからアクセスできるようになります。</p>
+  </section>
+
+  <section>
+    <h3>9. 閲覧用URL・秘密の編集用URLについて</h3>
+    <p>共有用コレクションを作成すると、<strong>閲覧用URL</strong>と<strong>秘密の編集用URL</strong>が発行されます。</p>
+
+    <h4>閲覧用URL</h4>
+    <ul>
+      <li>URLを知っている人が、共有用コレクションの内容を閲覧できます。</li>
+      <li>閲覧専用なので、共有相手がグッズの情報を編集・保存することはできません。</li>
+      <li>内容を見せたい相手には、こちらのURLを共有してください。</li>
+    </ul>
+
+    <h4>秘密の編集用URL</h4>
+    <ul>
+      <li>共有用コレクションの内容を編集し、変更を保存するためのURLです。</li>
+      <li>URLには編集権限が含まれています。</li>
+      <li><strong>他人には渡さず、自分だけが安全に保管してください。</strong></li>
+    </ul>
+
+    <p>共有する前に、グッズ名・画像・所持数・カテゴリ・タグなど、相手に見えてもよい情報になっているか確認してください。</p>
+  </section>
+
+  <section>
+    <h3>10. ご利用上の制限</h3>
+    <p>共有用コレクションには、次の制限があります。</p>
+    <ul>
+      <li><strong>登録できるグッズ：</strong> 1つの共有用コレクションにつき最大300件</li>
+      <li><strong>データ容量：</strong> 1つの共有用コレクションにつき最大8 MiB（約8.4 MB）</li>
+      <li><strong>新規作成回数：</strong> IPアドレスごとに1日20回まで</li>
+    </ul>
+    <p>新規作成回数の制限は、共有用コレクションを新しく作成するときに適用されます。同じネットワークを利用している人同士では、制限を共有する場合があります。</p>
+    <p>編集・保存回数や作成できる共有用コレクションの総数については、アプリ側で明示的な上限を設けていません。ただし、Cloudflare側の利用制限などが適用される場合があります。</p>
+  </section>
+
+  <section>
+    <h3>11. データの共有・取り扱いについて</h3>
+    <p>通常のブラウザ内に保存されたデータは、共有用コレクションを作成しない限り、自動的に共有されません。</p>
+    <p>共有用コレクションを作成すると、選択したコレクションのデータがCloudflareに保存されます。閲覧用URLを知っている人は、その内容を確認できます。</p>
+    <p>秘密の編集用URLが第三者に知られると、共有用コレクションを編集されるおそれがあります。取り扱いには十分注意してください。</p>
+    <p>大切なデータを守るため、定期的にバックアップを取り、共有する情報やURLの管理に気をつけてご利用ください。</p></section></div><div class="notice">使い方で困ったことや、追加してほしい機能があれば、下のボタンからXで連絡してください。</div><div class="row" style="margin-top:14px"><button class="primary" id="feedbackBtn" style="width:100%">質問・要望などを送る（X）</button></div></div></div>
 <div class="modal hidden" id="themeModal"><div class="modal-box"><div class="modal-head"><h2>背景色を設定</h2><button class="ghost" data-close="themeModal">閉じる</button></div><p class="small">ヘッダーとページ背景を別々に設定できます。画像から色を選ぶ場合は画像を読み込み、画像上の好きな場所をタップ／クリックしてください。</p><div class="form-grid"><label>ヘッダーの背景色<input id="headerColor" type="color" value="#fff0f6"></label><label>ページの背景色<input id="pageColor" type="color" value="#fffafd"></label><label class="span2">色を採取する画像<input id="eyedropImage" type="file" accept="image/*"></label></div><div class="row" style="align-items:flex-start;gap:16px;margin-top:12px"><canvas id="eyedropCanvas" class="preview hidden" style="max-width:min(100%,520px);max-height:360px;object-fit:contain;cursor:crosshair;margin-top:0"></canvas><div id="sampledColorPanel" class="hidden"><div class="small">スポイトで選んだ色</div><div class="sampled-preview"><div class="sample-swatch" id="sampledSwatch"></div><span class="sample-hex" id="sampledHex">#fff0f6</span></div></div></div><div class="row" style="margin-top:12px"><button class="primary" id="sampleHeaderBtn">採取色をヘッダーに適用</button><button class="primary" id="samplePageBtn">採取色をページ背景に適用</button><button class="ghost" id="resetThemeBtn">初期色に戻す</button><button class="primary" id="saveThemeBtn">色を保存</button></div><div class="notice">画像は色を採取するためだけに読み込みます。画像自体はコレクションに保存・送信されません。</div></div></div>
 <script>
 const DB_NAME='oshi-shelf-db', STORE='state';
