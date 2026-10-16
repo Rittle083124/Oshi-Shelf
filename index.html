@@ -241,7 +241,26 @@ $('cancelEditBtn').onclick=resetForm;
 $('statusChips').onclick=e=>{const b=e.target.closest('[data-status]');if(!b)return;const value=b.dataset.status;if(value==='all'){statusFilters.clear();statusFilters.add('all')}else{statusFilters.delete('all');if(statusFilters.has(value))statusFilters.delete(value);else statusFilters.add(value);if(!statusFilters.size)statusFilters.add('all')}render()};$('monoBtn').onclick=async()=>{state.mono=!state.mono;await persist();render()};
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.add('hidden'));['collageBtn','shareBtn'].forEach((id)=>$(id).onclick=()=>{if(id==='collageBtn'){$('collageModal').classList.remove('hidden');$('collageCanvas').classList.add('hidden');$('downloadCollageBtn').disabled=true;collageBlob=null}else makeShare()});
 async function imageFromData(url){return new Promise(resolve=>{if(!url)return resolve(null);const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=url})}
-$('generateCollageBtn').onclick=async()=>{const items=filteredItems(),cols=Math.max(1,Math.min(10,Number($('cols').value)||5)),rows=Math.max(1,Math.min(5,Number($('rows').value)||3)),chosen=items.slice(0,cols*rows),cell=300,head=$('showNames').value==='yes'?34:18,canvas=$('collageCanvas');canvas.width=cols*cell;canvas.height=rows*(cell+head);const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.textBaseline='middle';for(let k=0;k<chosen.length;k++){const it=chosen[k],x=(k%cols)*cell,y=Math.floor(k/cols)*(cell+head),img=await imageFromData(it.image);if(img){const scale=Math.min((cell-4)/img.width,(cell-4)/img.height),w=img.width*scale,h=img.height*scale;ctx.drawImage(img,x+(cell-w)/2,y+(cell-h)/2,w,h)}else{ctx.fillStyle='#fff2f7';ctx.fillRect(x+10,y+10,cell-20,cell-20);ctx.fillStyle='#d78aaa';ctx.font='56px sans-serif';ctx.fillText('♡',x+cell/2,y+cell/2)}if($('showCounts').value==='yes'){ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x+12,y+12,52,38,10);ctx.fill();ctx.fillStyle='#443442';ctx.font='bold 22px sans-serif';ctx.textAlign='left';ctx.fillText(String(it.qty),x+24,y+31);ctx.textAlign='center'}if($('showNames').value==='yes'){ctx.fillStyle='#342a35';ctx.font='bold 16px sans-serif';let n=it.name;if(n.length>18)n=n.slice(0,17)+'…';ctx.fillText(n,x+cell/2,y+cell+23)}}canvas.classList.remove('hidden');$('collageInfo').textContent=`${chosen.length}件を画像化しました（対象 ${items.length}件）。`;collageBlob=await new Promise(r=>canvas.toBlob(r,'image/png'));$('downloadCollageBtn').disabled=!collageBlob};
+$('generateCollageBtn').onclick=async()=>{
+const items=filteredItems(),cols=Math.max(1,Math.min(10,Number($('cols').value)||5)),rows=Math.max(1,Math.min(5,Number($('rows').value)||3)),chosen=items.slice(0,cols*rows),
+pad=4,            /* 画像の周りの余白(px)。小さいほど詰まる */
+cellH=260,        /* 1枠の高さ(px)。大きいほど高解像度 */
+head=$('showNames').value==='yes'?40:0, /* 名前欄の高さ。名前なしなら0 */
+canvas=$('collageCanvas');
+const imgs=await Promise.all(chosen.map(it=>imageFromData(it.image)));
+/* 画像の縦横比(幅÷高さ)の平均から、枠の幅を決める → 横の余白が減る */
+const ratios=imgs.filter(Boolean).map(im=>im.width/im.height),avg=ratios.length?ratios.reduce((p,c)=>p+c,0)/ratios.length:1;
+const cellW=Math.round(Math.max(cellH*0.5,Math.min(cellH*1.6,(cellH-pad*2)*avg+pad*2)));
+canvas.width=cols*cellW;canvas.height=rows*(cellH+head);
+const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.textBaseline='middle';
+for(let k=0;k<chosen.length;k++){
+const it=chosen[k],img=imgs[k],x=(k%cols)*cellW,y=Math.floor(k/cols)*(cellH+head);
+if(img){const scale=Math.min((cellW-pad*2)/img.width,(cellH-pad*2)/img.height),w=img.width*scale,h=img.height*scale;ctx.drawImage(img,x+(cellW-w)/2,y+(cellH-h)/2,w,h)}
+else{ctx.fillStyle='#fff2f7';ctx.fillRect(x+pad,y+pad,cellW-pad*2,cellH-pad*2);ctx.fillStyle='#d78aaa';ctx.font='56px sans-serif';ctx.fillText('♡',x+cellW/2,y+cellH/2)}
+if($('showCounts').value==='yes'){ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(x+12,y+12,52,38,10);ctx.fill();ctx.fillStyle='#443442';ctx.font='bold 22px sans-serif';ctx.textAlign='left';ctx.fillText(String(it.qty),x+24,y+31);ctx.textAlign='center'}
+if($('showNames').value==='yes'){ctx.fillStyle='#342a35';ctx.font='bold 16px sans-serif';let n=it.name;if(ctx.measureText(n).width>cellW-8){while(n.length>1&&ctx.measureText(n+'…').width>cellW-8)n=n.slice(0,-1);n+='…'}ctx.fillText(n,x+cellW/2,y+cellH+head/2)}
+}
+canvas.classList.remove('hidden');$('collageInfo').textContent=`${chosen.length}件を画像化しました（対象 ${items.length}件）。`;collageBlob=await new Promise(r=>canvas.toBlob(r,'image/png'));$('downloadCollageBtn').disabled=!collageBlob};
 $('downloadCollageBtn').onclick=()=>{if(!collageBlob)return;const a=document.createElement('a');a.href=URL.createObjectURL(collageBlob);a.download='oshi-shelf-trade.png';a.click();URL.revokeObjectURL(a.href)};
 function encodeData(obj){const bytes=new TextEncoder().encode(JSON.stringify(obj));let bin='';for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function decodeData(str){str=str.replace(/-/g,'+').replace(/_/g,'/');str+='='.repeat((4-str.length%4)%4);const bin=atob(str),bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));return JSON.parse(new TextDecoder().decode(bytes))}
