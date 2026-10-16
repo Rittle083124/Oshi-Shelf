@@ -214,7 +214,33 @@ function render(){if(location.hash.startsWith('#v=')||location.hash.startsWith('
 $('monoBtn').textContent=`未所持を白黒：${state.mono?'ON':'OFF'}`;document.querySelectorAll('[data-status]').forEach(b=>b.classList.toggle('active',statusFilters.has(b.dataset.status)));const items=filteredItems();$('stats').textContent=`${items.length}件表示 ／ 全${allItems().length}件・所持合計 ${allItems().reduce((n,i)=>n+i.qty,0)}個`;$('itemGrid').innerHTML=items.map(i=>`<article class="item" data-id="${i.id}" draggable="true" title="ドラッグして並び替え"><div class="thumb clickable-thumb" data-action="edit" data-id="${i.id}" title="画像をクリックして編集">${i.image?`<img loading="lazy" src="${i.image}" class="${state.mono&&i.qty===0?'mono':''}" alt="">`:'<span class="placeholder">♡</span>'}<span class="count-badge">${i.qty}</span><button class="heart ${i.favorite?'on':''}" title="お気に入り" data-action="favorite" data-id="${i.id}">${i.favorite?'♥':'♡'}</button></div><div class="item-name">${escapeHTML(i.name)}</div><div class="meta">${escapeHTML([...categoriesOf(i).map(optionLabel),...tagsOf(i).map(optionLabel)].filter(Boolean).join(' · '))}</div><div class="quantity"><button data-action="minus" data-id="${i.id}" aria-label="所持数を減らす">−</button><span>${i.qty}</span><button data-action="plus" data-id="${i.id}" aria-label="所持数を増やす">＋</button></div><div class="card-actions"><button class="ghost" data-action="edit" data-id="${i.id}">編集</button><button class="danger" data-action="delete" data-id="${i.id}">削除</button><button class="ghost ${i.want==='want'?'want-active':''}" data-action="want" data-id="${i.id}">欲しい</button></div></article>`).join('');$('emptyState').classList.toggle('hidden',items.length>0);$('itemGrid').classList.toggle('hidden',items.length===0);$('itemGrid').dataset.density=$('densitySelect').value}
 function resetForm(){editing=null;$('itemForm').reset();renderChoiceLists([],[]);$('itemImage').required=true;$('itemQty').value=0;$('editId').value='';$('itemImage').required=true;$('saveItemBtn').textContent='保存する';$('formHint').textContent='名称・所持数・画像は必須です。メモは空欄でも登録できます。画像は登録時に圧縮してブラウザ内に保存します。'}
 function editItem(item){editing=item.id;$('itemName').value=item.name;renderChoiceLists(categoriesOf(item),tagsOf(item));$('itemQty').value=item.qty;$('itemNote').value=item.note||'';$('editId').value=item.id;$('itemImage').required=false;$('saveItemBtn').textContent='変更を保存';$('formHint').textContent='画像を変更する場合のみ、新しい画像を選択してください。';$('addPanel').open=true;$('addPanel').scrollIntoView({behavior:'smooth',block:'start'})}
-function resizeImage(file){return new Promise((resolve,reject)=>{if(!file)return resolve(null);if(!file.type.startsWith('image/'))return reject(Error('画像ファイルを選んでください'));const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{const max=1000,scale=Math.min(1,max/Math.max(img.width,img.height)),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale)),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);canvas.toBlob(blob=>{if(!blob)return reject(Error('画像を圧縮できませんでした'));const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob)},'image/jpeg',.82)};img.onerror=()=>{URL.revokeObjectURL(url);reject(Error('画像を読み込めませんでした'))};img.src=url})}
+function resizeImage(file){return new Promise((resolve,reject)=>{
+if(!file)return resolve(null);
+if(!file.type.startsWith('image/'))return reject(Error('画像ファイルを選んでください'));
+const url=URL.createObjectURL(file),img=new Image();
+img.onload=async()=>{
+URL.revokeObjectURL(url);
+const TARGET=18000; /* 1枚あたりの目標サイズ(バイト)。300件×約24KB(文字化後)≒7.4MB */
+let max=480,q=.8,blob=null; /* 長辺の最大px / 画質 */
+try{
+for(let n=0;n<14;n++){
+const scale=Math.min(1,max/Math.max(img.width,img.height)),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+const c=document.createElement('canvas');c.width=w;c.height=h;
+const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);
+blob=await new Promise(r=>c.toBlob(r,'image/jpeg',q));
+if(!blob)return reject(Error('画像を圧縮できませんでした'));
+if(blob.size<=TARGET)break;
+/* 大きすぎたら、まず画質を下げ、それでもだめなら少し縮小する */
+if(q>.55)q=Math.round((q-.1)*100)/100;else max=Math.round(max*.85);
+}
+const reader=new FileReader();
+reader.onload=()=>resolve(reader.result);
+reader.onerror=()=>reject(reader.error);
+reader.readAsDataURL(blob);
+}catch(err){reject(err)}
+};
+img.onerror=()=>{URL.revokeObjectURL(url);reject(Error('画像を読み込めませんでした'))};
+img.src=url})}
 $('itemForm').addEventListener('submit',async e=>{e.preventDefault();const name=$('itemName').value.trim();if(!name)return;const old=editing?allItems().find(i=>i.id===editing):null;try{const selectedFile=$('itemImage').files[0];if(!old&&!selectedFile){alert('グッズの画像を選択してください。');$('itemImage').focus();return}const image=await resizeImage(selectedFile);const finalImage=image||old?.image||'';if(!finalImage){alert('画像を選択してください。');return}const item={id:editing||uid(),name,categories:checkedValues('itemCategoryChoices'),category:checkedValues('itemCategoryChoices').join(', '),tags:checkedValues('itemTagChoices'),qty:Math.max(0,Math.min(99999,Number($('itemQty').value)||0)),want:old?.want||'normal',note:$('itemNote').value.trim(),image:finalImage,favorite:old?.favorite||false,created:old?.created||Date.now()};const col=activeCol();if(old)col.items=col.items.map(i=>i.id===old.id?item:i);else if($('addToEnd').checked)col.items.push(item);else col.items.unshift(item);await persist();resetForm();render();}catch(err){alert('グッズを保存できませんでした。ブラウザの保存容量やプライベートモードをご確認ください。\n'+err.message)}});
 $('itemGrid').addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const item=allItems().find(i=>i.id===b.dataset.id);if(!item)return;switch(b.dataset.action){case'plus':item.qty=Math.min(99999,item.qty+1);break;case'minus':item.qty=Math.max(0,item.qty-1);break;case'favorite':item.favorite=!item.favorite;break;case'want':item.want=item.want==='want'?'normal':'want';break;case'edit':editItem(item);return;case'delete':if(!confirm(`「${item.name}」を削除しますか？`))return;activeCol().items=allItems().filter(i=>i.id!==item.id);break}await persist();render()});
 // PC drag-and-drop + touch long-press reorder
