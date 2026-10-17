@@ -211,7 +211,27 @@ throw lastErr}
 function showCloudError(message){document.body.classList.add('viewer-active');$('app').classList.add('hidden');$('viewerMode').classList.remove('hidden');$('viewerMode').innerHTML=`<h2>共有棚を開けませんでした</h2><p>${escapeHTML(message)}</p><div class="row"><button class="primary" id="viewerRetryBtn">もう一度読み込む</button><button id="viewerBackBtn">戻る</button></div>`;$('viewerRetryBtn').onclick=()=>location.reload();$('viewerBackBtn').onclick=()=>{location.hash='';location.reload()}}
 function showCloudLoading(){document.body.classList.add('viewer-active');$('app').classList.add('hidden');$('viewerMode').classList.remove('hidden');$('viewerMode').innerHTML='<p>共有棚を読み込み中です…</p>'}
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>req.result.createObjectStore(STORE);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
-async function persist(){if(cloudEditor){const c=activeCol();if(!c)throw new Error('保存する棚がありません');await cloudRequest('/api/share/'+cloudEditor.id,{method:'PUT',headers:{Authorization:'Bearer '+cloudEditor.token},body:JSON.stringify({data:c,mono:!!state.mono,theme:state.theme||null})});return}if(!db)db=await openDB();await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(state,'main');tx.oncomplete=res;tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error||new Error('保存が中断されました'))})} 
+async function persistCore(){if(cloudEditor){const c=activeCol();if(!c)throw new Error('保存する棚がありません');await cloudRequest('/api/share/'+cloudEditor.id,{method:'PUT',headers:{Authorization:'Bearer '+cloudEditor.token},body:JSON.stringify({data:c,mono:!!state.mono,theme:state.theme||null})});return}if(!db)db=await openDB();await new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(state,'main');tx.oncomplete=res;tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error||new Error('保存が中断されました'))})} 
+/* ---- 保存を「まとめて・順番に」行う仕組み ---- */
+let saveChain=Promise.resolve(),saveTimer=null,savePending=false;
+/* 今すぐ保存（前の保存が終わってから実行。二重送信や順序の入れ替わりを防ぐ） */
+function persist(){savePending=false;clearTimeout(saveTimer);const p=saveChain.catch(()=>{}).then(persistCore);saveChain=p;return p}
+/* 少し待ってから保存（連打しても最後の操作の0.7秒後に1回だけ保存） */
+function schedulePersist(){savePending=true;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{persist().catch(e=>alert('保存できませんでした：'+e.message))},700)}
+/* アプリを離れる・閉じるときは、待たずに保存する */
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&savePending)persist().catch(()=>{})});
+window.addEventListener('beforeunload',e=>{if(savePending){persist().catch(()=>{});e.preventDefault();e.returnValue=''}});
+/* ---- 1枚のカードだけを書き換える（全体を作り直さない） ---- */
+function canPatchCard(){return statusFilters.size===1&&statusFilters.has('all')&&!/^(qty|multi)/.test($('sortSelect').value)}
+function updateCard(item){
+const card=$('itemGrid').querySelector(`.item[data-id="${item.id}"]`);if(!card)return false;
+card.querySelector('.count-badge').textContent=item.qty;
+card.querySelector('.quantity span').textContent=item.qty;
+const img=card.querySelector('.thumb img');if(img)img.classList.toggle('mono',!!state.mono&&item.qty===0);
+const h=card.querySelector('.heart');h.classList.toggle('on',!!item.favorite);h.textContent=item.favorite?'♥':'♡';
+card.querySelector('[data-action="want"]').classList.toggle('want-active',item.want==='want');
+$('stats').textContent=`${$('itemGrid').children.length}件表示 ／ 全${allItems().length}件・所持合計 ${allItems().reduce((n,i)=>n+i.qty,0)}個`;
+return true}
 async function load(){try{db=await openDB();state=await new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).get('main');r.onsuccess=()=>res(r.result||state);r.onerror=()=>rej(r.error)});}catch(e){console.warn(e)}}
 const activeCol=()=>state.collections.find(c=>c.id===state.active)||state.collections[0];
 const allItems=()=>activeCol()?.items||[];
@@ -265,7 +285,7 @@ reader.readAsDataURL(blob);
 img.onerror=()=>{URL.revokeObjectURL(url);reject(Error('画像を読み込めませんでした'))};
 img.src=url})}
 $('itemForm').addEventListener('submit',async e=>{e.preventDefault();const name=$('itemName').value.trim();if(!name)return;const old=editing?allItems().find(i=>i.id===editing):null;try{const selectedFile=$('itemImage').files[0];if(!old&&!selectedFile){alert('グッズの画像を選択してください。');$('itemImage').focus();return}const image=await resizeImage(selectedFile);const finalImage=image||old?.image||'';if(!finalImage){alert('画像を選択してください。');return}const item={id:editing||uid(),name,categories:checkedValues('itemCategoryChoices'),category:checkedValues('itemCategoryChoices').join(', '),tags:checkedValues('itemTagChoices'),qty:Math.max(0,Math.min(99999,Number($('itemQty').value)||0)),want:old?.want||'normal',note:$('itemNote').value.trim(),image:finalImage,favorite:old?.favorite||false,created:old?.created||Date.now()};const col=activeCol();if(old)col.items=col.items.map(i=>i.id===old.id?item:i);else if($('addToEnd').checked)col.items.push(item);else col.items.unshift(item);await persist();resetForm();render();}catch(err){alert('グッズを保存できませんでした。ブラウザの保存容量やプライベートモードをご確認ください。\n'+err.message)}});
-$('itemGrid').addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const item=allItems().find(i=>i.id===b.dataset.id);if(!item)return;switch(b.dataset.action){case'plus':item.qty=Math.min(99999,item.qty+1);break;case'minus':item.qty=Math.max(0,item.qty-1);break;case'favorite':item.favorite=!item.favorite;break;case'want':item.want=item.want==='want'?'normal':'want';break;case'edit':editItem(item);return;case'delete':if(!confirm(`「${item.name}」を削除しますか？`))return;activeCol().items=allItems().filter(i=>i.id!==item.id);break}await persist();render()});
+$('itemGrid').addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const item=allItems().find(i=>i.id===b.dataset.id);if(!item)return;switch(b.dataset.action){case'plus':item.qty=Math.min(99999,item.qty+1);break;case'minus':item.qty=Math.max(0,item.qty-1);break;case'favorite':item.favorite=!item.favorite;break;case'want':item.want=item.want==='want'?'normal':'want';break;case'edit':editItem(item);return;case'delete':if(!confirm(`「${item.name}」を削除しますか？`))return;activeCol().items=allItems().filter(i=>i.id!==item.id);break}if(['plus','minus','favorite','want'].includes(b.dataset.action)){if(!(canPatchCard()&&updateCard(item)))render();schedulePersist();return}await persist();render()});
 // PC drag-and-drop + touch long-press reorder
 $('itemGrid').addEventListener('dragstart',e=>{const card=e.target.closest('.item');if(!card)return;dragId=card.dataset.id;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',dragId)}catch(_){}});
 $('itemGrid').addEventListener('dragover',e=>{const card=e.target.closest('.item');if(!card||!dragId||card.dataset.id===dragId)return;e.preventDefault();document.querySelectorAll('.drop-target').forEach(x=>x.classList.remove('drop-target'));card.classList.add('drop-target')});
